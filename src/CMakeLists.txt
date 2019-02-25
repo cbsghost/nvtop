@@ -25,10 +25,10 @@ set_property(TARGET nvtop PROPERTY C_STANDARD 11)
 
 if(MINGW)
   target_link_libraries(nvtop
-    PRIVATE nvml ncurses m)
+    PRIVATE nvml ncurses m "-static")
 else()
   target_link_libraries(nvtop
-    PRIVATE nvml ncurses m "-Wl,-Bstatic")
+    PRIVATE nvml ncurses m)
 endif()
 
 install (TARGETS nvtop
