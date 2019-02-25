@@ -19,6 +19,17 @@
  *
  */
 
+#ifdef _WIN32
+#define __USE_MINGW_ANSI_STDIO 1
+#define setenv(name, value, overwrite) \
+        _putenv_s(name, value)
+#include <windef.h>
+#include <winbase.h>
+#include <wincon.h>
+#include <winnls.h>
+#include <fcntl.h>
+#endif
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,10 +53,12 @@ static void exit_handler(int signum) {
   signal_bits |= STOP_SIGNAL;
 }
 
+#ifndef _WIN32
 static void resize_handler(int signum) {
   (void) signum;
   signal_bits |= RESIZE_SIGNAL;
 }
+#endif
 
 static const char helpstring[] =
 "Available options:\n"
@@ -136,7 +149,12 @@ static size_t update_mask_value(const char *str, size_t entry_mask, bool addTo) 
 }
 
 int main (int argc, char **argv) {
+#ifdef _WIN32
+  SetConsoleCP(CP_UTF8);
+  SetConsoleOutputCP(CP_UTF8);
+#else
   (void) setlocale(LC_CTYPE, "");
+#endif
 
   opterr = 0;
   int refresh_interval = 1000;
@@ -195,6 +213,12 @@ int main (int argc, char **argv) {
 
   setenv("ESCDELAY", "10", 1);
 
+#ifdef _WIN32
+  if (signal(SIGINT, exit_handler) == SIG_ERR) {
+    perror("Impossible to set signal handler for SIGINT: ");
+    exit(EXIT_FAILURE);
+  }
+#else
   struct sigaction siga;
   siga.sa_flags = 0;
   sigemptyset(&siga.sa_mask);
@@ -213,6 +237,7 @@ int main (int argc, char **argv) {
     perror("Impossible to set signal handler for SIGQUIT: ");
     exit(EXIT_FAILURE);
   }
+#endif
 
   size_t gpu_mask;
   if (selectedGPU != NULL) {

@@ -19,6 +19,13 @@
  *
  */
 
+#ifdef _WIN32
+#define __USE_MINGW_ANSI_STDIO 1
+#define pid_t DWORD
+#include <windef.h>
+#include <winbase.h>
+#endif
+
 #include "nvtop/interface.h"
 
 #include <stdlib.h>
@@ -988,6 +995,26 @@ static void draw_processes(
   print_processes_on_screen(total_processes, &interface->process);
 }
 
+#ifdef _WIN32
+static const char *signalsName[] = {
+"Cancel",
+"SIGABRT",
+"SIGFPE",
+"SIGILL",
+"SIGINT",
+"SIGSEGV",
+"SIGTERM",
+};
+
+static const int signalsValues[] = {
+SIGABRT,
+SIGFPE ,
+SIGILL ,
+SIGINT ,
+SIGSEGV,
+SIGTERM,
+};
+#else
 static const char *signalsName[] = {
 "Cancel",
 "SIGABRT",
@@ -1050,6 +1077,7 @@ SIGVTALRM,
 SIGXCPU  ,
 SIGXFSZ  ,
 };
+#endif
 
 static const size_t nvtop_num_signals = 28;
 
@@ -1272,7 +1300,15 @@ static void option_do_kill(struct nvtop_interface *inter) {
     return;
   pid_t pid = inter->process.all_process[inter->process.selected_row].pid;
   int sig = signalsValues[inter->option_window.selected_row-1];
-  kill(pid,sig);
+
+#ifdef _WIN32
+  HANDLE hProc;
+  hProc = OpenProcess(PROCESS_TERMINATE, false, pid);
+  TerminateProcess(hProc, sig);
+  CloseHandle(hProc);
+#else
+  kill(pid, sig);
+#endif
 }
 
 static void option_change_sort(struct nvtop_interface *inter) {

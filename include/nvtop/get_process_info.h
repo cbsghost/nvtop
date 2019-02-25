@@ -22,6 +22,11 @@
 #ifndef __GET_PROCESS_INFO_H_
 #define __GET_PROCESS_INFO_H_
 
+#ifdef _WIN32
+#include <windef.h>
+#define pid_t DWORD
+#endif
+
 #include <stdlib.h>
 
 void get_username_from_pid(pid_t pid, size_t size_buffer, char *buffer);

@@ -3,11 +3,19 @@ configure_file(
   "${PROJECT_BINARY_DIR}/include/nvtop/version.h"
   IMMEDIATE @ONLY)
 
-add_executable (nvtop
-  nvtop.c
-  interface.c
-  get_process_info_linux.c
-  extract_gpuinfo.c)
+if(MINGW)
+  add_executable(nvtop
+    nvtop.c
+    interface.c
+    get_process_info_windows.c
+    extract_gpuinfo.c)
+else()
+  add_executable(nvtop
+    nvtop.c
+    interface.c
+    get_process_info_linux.c
+    extract_gpuinfo.c)
+endif()
 
 target_include_directories(nvtop PRIVATE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -15,8 +23,13 @@ target_include_directories(nvtop PRIVATE
 
 set_property(TARGET nvtop PROPERTY C_STANDARD 11)
 
-target_link_libraries(nvtop
-  PRIVATE nvml ncurses m)
+if(MINGW)
+  target_link_libraries(nvtop
+    PRIVATE nvml ncurses m)
+else()
+  target_link_libraries(nvtop
+    PRIVATE nvml ncurses m "-Wl,-Bstatic")
+endif()
 
 install (TARGETS nvtop
   RUNTIME DESTINATION bin)
