@@ -27,7 +27,6 @@
 #include <winbase.h>
 #include <wincon.h>
 #include <winnls.h>
-#include <fcntl.h>
 #endif
 
 #include <signal.h>
@@ -149,12 +148,7 @@ static size_t update_mask_value(const char *str, size_t entry_mask, bool addTo) 
 }
 
 int main (int argc, char **argv) {
-#ifdef _WIN32
-  SetConsoleCP(CP_UTF8);
-  SetConsoleOutputCP(CP_UTF8);
-#else
   (void) setlocale(LC_CTYPE, "");
-#endif
 
   opterr = 0;
   int refresh_interval = 1000;
