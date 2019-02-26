@@ -24,44 +24,54 @@
 #include <stdio.h>
 #include <string.h>
 #include <winbase.h>
-#include <sddl.h>
 
 void get_username_from_pid(pid_t pid, size_t size_buffer, char *buffer) {
   HANDLE hProc       = NULL;
   HANDLE hProcToken  = NULL;
   DWORD  dwTokenSize = 0u;
-  
-  PTOKEN_USER pTokenUser  = NULL;
-  LPSTR       lpStringSid = NULL;
-  
+
+  PTOKEN_USER  pTokenUser                = NULL;
+  LPSTR        lpName                    = NULL;
+  DWORD        dwCchName                 = 0u;
+  LPSTR        lpReferencedDomainName    = NULL;
+  DWORD        dwCchReferencedDomainName = 0u;
+  SID_NAME_USE eUse                      = 0;
+
   buffer[0] = '\0';
-  
-  hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-  
-  if (!OpenProcessToken(hProc, TOKEN_QUERY, hProcToken)) {
+
+  hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+
+  if (hProc == NULL) {
     return;
   }
 
-  if (!GetTokenInformation(hProcToken, TokenUser, NULL, dwTokenSize, &dwTokenSize)){
-    CloseHandle(hProcToken);
+  if (!OpenProcessToken(hProc, TOKEN_QUERY, &hProcToken)) {
     return;
   }
-  pTokenUser = (TOKEN_USER *)LocalAlloc(LMEM_FIXED, dwTokenSize);
+
+  GetTokenInformation(hProcToken, TokenUser, NULL, dwTokenSize, &dwTokenSize);
+  pTokenUser = (PTOKEN_USER)LocalAlloc(LMEM_FIXED, dwTokenSize);
   if (!GetTokenInformation(hProcToken, TokenUser, pTokenUser, dwTokenSize, &dwTokenSize)){
     LocalFree(pTokenUser);
     CloseHandle(hProcToken);
     return;
   }
-  
-  if (!ConvertSidToStringSid(pTokenUser->User.Sid, &lpStringSid)) {
+
+  LookupAccountSidA(NULL, pTokenUser->User.Sid, lpName, &dwCchName, lpReferencedDomainName, &dwCchReferencedDomainName, &eUse);
+  lpName = (LPSTR)LocalAlloc(LMEM_FIXED, dwCchName);
+  lpReferencedDomainName = (LPSTR)LocalAlloc(LMEM_FIXED, dwCchReferencedDomainName);
+  if (!LookupAccountSidA(NULL, pTokenUser->User.Sid, lpName, &dwCchName, lpReferencedDomainName, &dwCchReferencedDomainName, &eUse)) {
+    LocalFree(lpName);
+    LocalFree(lpReferencedDomainName);
     LocalFree(pTokenUser);
     CloseHandle(hProcToken);
     CloseHandle(hProc);
     return;
   }
-  strncpy(buffer, lpStringSid, size_buffer);
-  
-  LocalFree(lpStringSid);
+  strncpy(buffer, lpName, size_buffer);
+
+  LocalFree(lpName);
+  LocalFree(lpReferencedDomainName);
   LocalFree(pTokenUser);
   CloseHandle(hProcToken);
   CloseHandle(hProc);
