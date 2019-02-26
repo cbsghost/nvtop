@@ -1014,6 +1014,9 @@ SIGINT ,
 SIGSEGV,
 SIGTERM,
 };
+
+static const size_t nvtop_num_signals = 6;
+
 #else
 static const char *signalsName[] = {
 "Cancel",
@@ -1077,9 +1080,9 @@ SIGVTALRM,
 SIGXCPU  ,
 SIGXFSZ  ,
 };
-#endif
 
 static const size_t nvtop_num_signals = 28;
+#endif
 
 static void draw_kill_option(struct nvtop_interface *interface) {
   WINDOW *win = interface->option_window.option_win;
