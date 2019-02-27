@@ -1311,8 +1311,10 @@ static void option_do_kill(struct nvtop_interface *inter) {
 #ifdef _WIN32
   HANDLE hProc;
   hProc = OpenProcess(PROCESS_TERMINATE, false, pid);
-  TerminateProcess(hProc, sig);
-  CloseHandle(hProc);
+  if (hProc != NULL) {
+    TerminateProcess(hProc, sig);
+    CloseHandle(hProc);
+  }
 #else
   kill(pid, sig);
 #endif
